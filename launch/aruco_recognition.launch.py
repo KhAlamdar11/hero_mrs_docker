@@ -6,15 +6,12 @@ from launch_ros.actions import Node, SetParameter
 def generate_launch_description():
 
     aruco_params = os.path.join(
-        get_package_share_directory('hero_crazyflies_benchmarking'),
+        get_package_share_directory('icuas26_finals'),
         'config',
         'aruco_parameters.yaml'
         )
     
     launch_description = []
-    type_name = os.environ.get('CFS_TYPE', 'sim')
-    if type_name == 'sim':
-        launch_description.append(SetParameter(name='use_sim_time', value=True))
         
     for i in range(1, int(os.environ.get('NUM_ROBOTS', '4')) + 1):
         aruco_node = Node(

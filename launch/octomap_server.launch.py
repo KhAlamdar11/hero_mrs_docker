@@ -7,10 +7,6 @@ from launch_ros.actions import Node,SetParameter
 
 def generate_launch_description():
     launch_description = []
-    
-    type_name = os.environ.get('CFS_TYPE', 'sim')
-    if type_name == 'sim':
-        launch_description.append(SetParameter(name='use_sim_time', value=True))
         
     environment_name = os.environ.get('ENV_NAME', 'empty_world')
     if environment_name == 'empty_world':
@@ -19,7 +15,7 @@ def generate_launch_description():
     else:
         world_name = "_".join(environment_name.split("_")[:-1])
         bt_file = os.path.join(
-        get_package_share_directory('hero_crazyflies_benchmarking'),
+        get_package_share_directory('icuas26_finals'),
         'worlds', world_name, 'meshes', world_name+'.binvox.bt')
 
         launch_description.append(

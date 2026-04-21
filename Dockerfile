@@ -233,7 +233,7 @@ RUN cd $HOME && git clone --recursive https://github.com/bitcraze/crazyflie-firm
     && python3 setup.py install --user \
     && export PYTHONPATH=$HOME/crazyflie-firmware/build:$PYTHONPATH
 
-RUN pip install cflib
+RUN pip install cflib opencv-python
 RUN pip install setuptools==64.0.0
 
 # Final setup

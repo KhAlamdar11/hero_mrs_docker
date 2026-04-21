@@ -7,7 +7,7 @@ SCRIPTPATH=`dirname $SCRIPT`
 cd "$SCRIPTPATH"
 
 SETUP_NAME=$1
-[ -z "$SETUP_NAME" ] && SETUP_NAME=${CFS_TYPE}_setup.sh
+[ -z "$SETUP_NAME" ] && SETUP_NAME=setup.sh
 
 # start tmuxinator
-tmuxinator start -p session_${CFS_TYPE}.yml setup_name=$SETUP_NAME
+tmuxinator start -p session.yml setup_name=$SETUP_NAME
