@@ -8,15 +8,15 @@ from launch_ros.actions import Node,SetParameter
 def generate_launch_description():
     launch_description = []
         
-    environment_name = os.environ.get('ENV_NAME', 'empty_world')
-    if environment_name == 'empty_world':
+    environment_name = os.environ.get('ENV_NAME', 'empty')
+    if environment_name == 'empty':
         # empty world, no octomap needed
         pass
     else:
         world_name = "_".join(environment_name.split("_")[:-1])
         bt_file = os.path.join(
         get_package_share_directory('icuas26_finals'),
-        'worlds', world_name, 'meshes', world_name+'.binvox.bt')
+        'worlds', world_name, 'meshes', world_name+'.bt')
 
         launch_description.append(
             Node(

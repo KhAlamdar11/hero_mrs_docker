@@ -114,7 +114,29 @@ def generate_launch_description():
             ]
         )
         launch_description.append(vel_mux_node)
-        
+    AGV_path = os.environ.get('AGV_PATH', '')
+    
+    AGV_yaml_path = os.path.join(
+        get_package_share_directory('icuas26_finals'),
+        'config',
+        AGV_path)
+    
+    AGV_vel = float(os.environ.get('AGV_VEL', '0.3'))
+    
+    launch_description.append(
+        Node(
+           package='icuas26_finals',
+           executable='AGV.py',
+           name='AGV',
+           namespace='AGV',
+           output='screen',
+           parameters=[
+                {"velocity": AGV_vel},
+                {"publish_rate": 10.0},
+                {"yaml_path": AGV_yaml_path}
+            ]
+       ))
+    
     launch_description.append(       
         Node(
             package='rviz2',

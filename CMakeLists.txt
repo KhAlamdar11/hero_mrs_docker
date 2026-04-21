@@ -32,6 +32,7 @@ install(PROGRAMS
   scripts/aideck_streamer_tcp.py
   scripts/aideck_streamer_udp.py
   scripts/joy_emergency.py
+  scripts/AGV.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
