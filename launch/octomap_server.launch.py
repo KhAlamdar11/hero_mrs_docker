@@ -8,8 +8,8 @@ from launch_ros.actions import Node,SetParameter
 def generate_launch_description():
     launch_description = []
         
-    environment_name = os.environ.get('ENV_NAME', 'empty')
-    if environment_name == 'empty':
+    environment_name = os.environ.get('ENV_NAME', 'empty_world')
+    if environment_name == 'empty_world':
         # empty world, no octomap needed
         pass
     else:
