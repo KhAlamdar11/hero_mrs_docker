@@ -236,6 +236,7 @@ RUN cd $HOME && git clone --recursive https://github.com/bitcraze/crazyflie-firm
 RUN pip install cflib opencv-python
 RUN pip install setuptools==64.0.0
 RUN pip install opencv-contrib-python==4.6.0.66
+RUN pip install --upgrade numpy==1.26.4
 
 # Final setup
 ENV USERNAME=root
