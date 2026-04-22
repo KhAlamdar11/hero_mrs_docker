@@ -2,7 +2,7 @@
 robots:
   cf_1: #green
     enabled: true
-    uri: radio://0/80/2M/E7E7E7E7E7
+    uri: radio://0/90/2M/E7E7E7E7E7
     initial_position: [0.0, 0.0 , 0.0]
     type: cf21  # see robot_types
   cf_2: #red

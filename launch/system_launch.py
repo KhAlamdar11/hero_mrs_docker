@@ -76,7 +76,7 @@ def generate_launch_description():
     
 
     launch_description = []
-    cfs_server_node = 'crazyflie_server_reconnect.py'   
+    cfs_server_node = 'crazyflie_server_reconnect_new.py'   
     launch_description.append(
         Node(
             package='icuas26_finals',

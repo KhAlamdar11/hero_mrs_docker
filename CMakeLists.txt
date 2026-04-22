@@ -29,6 +29,7 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/crazyflie_server_reconnect.py
+  scripts/crazyflie_server_reconnect_new.py
   scripts/aideck_streamer_tcp.py
   scripts/aideck_streamer_udp.py
   scripts/joy_emergency.py
