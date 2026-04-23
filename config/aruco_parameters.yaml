@@ -4,7 +4,7 @@
     aruco_dictionary_id: DICT_5X5_250
     image_topic: /cf_1/image
     camera_info_topic: /cf_1/camera_info
-    camera_frame: camera
+    camera_frame: cf_1/camera
 
 /cf_2/aruco_node:
   ros__parameters:
@@ -12,7 +12,7 @@
     aruco_dictionary_id: DICT_5X5_250
     image_topic: /cf_2/image
     camera_info_topic: /cf_2/camera_info
-    camera_frame: camera
+    camera_frame: cf_2/camera
 
 /cf_3/aruco_node:
   ros__parameters:
@@ -20,7 +20,7 @@
     aruco_dictionary_id: DICT_5X5_250
     image_topic: /cf_3/image
     camera_info_topic: /cf_3/camera_info
-    camera_frame: camera
+    camera_frame: cf_3/camera
 
 /cf_4/aruco_node:
   ros__parameters:
@@ -28,5 +28,5 @@
     aruco_dictionary_id: DICT_5X5_250
     image_topic: /cf_4/image
     camera_info_topic: /cf_4/camera_info
-    camera_frame: camera
+    camera_frame: cf_4/camera
 
