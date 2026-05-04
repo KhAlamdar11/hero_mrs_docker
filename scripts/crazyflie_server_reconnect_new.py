@@ -1081,12 +1081,22 @@ class CrazyflieServer(Node):
             + f"duration={duration} s,"
             + f"group_mask={request.group_mask})"
         )
+        arm_bool = True
         if uri == "all":
+            for link_uri in self.uris:
+                self.swarm._cfs[link_uri].cf.platform.send_arming_request(
+                    arm_bool
+                )
+            time.sleep(0.5)
             for link_uri in self.uris:
                 self.swarm._cfs[link_uri].cf.high_level_commander.takeoff(
                     request.height, duration
                 )
         else:
+            self.swarm._cfs[uri].cf.platform.send_arming_request(
+                    arm_bool
+                )
+            time.sleep(0.5)
             self.swarm._cfs[uri].cf.high_level_commander.takeoff(
                 request.height, duration
             )
