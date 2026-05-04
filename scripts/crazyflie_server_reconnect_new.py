@@ -496,7 +496,7 @@ class CrazyflieServer(Node):
             qos_profile = QoSProfile(reliability =QoSReliabilityPolicy.BEST_EFFORT,
                 history=QoSHistoryPolicy.KEEP_LAST,
                 depth=1,
-                deadline = Duration(seconds=0, nanoseconds=1e9/100.0))
+                deadline = Duration(seconds=0, nanoseconds=1e9/24.0))
 
             self.create_subscription(
                 NamedPoseArray, "/poses",
