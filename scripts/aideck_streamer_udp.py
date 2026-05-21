@@ -11,6 +11,9 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from sensor_msgs.msg import Image, CameraInfo
 from cv_bridge import CvBridge
+from rclpy.parameter import Parameter
+from rcl_interfaces.msg import SetParametersResult
+
 
 CPX_HEADER_SIZE = 4
 IMG_HEADER_MAGIC = 0xBC
@@ -76,9 +79,20 @@ class PerAddressStream:
 
         # Static camera info message
         self.camera_info_msg = self._construct_camera_info(camera_info_config) if camera_info_config else None
+        
+        #dynamic parameter  for rotation
+        # self.node.declare_parameter(f'rotate_img_{self.cf_id}', 0)
+        # self.img_rotate = self.node.get_parameter(f'rotate_img_{self.cf_id}').get_parameter_value().integer_value
+        # self.node.add_on_set_parameters_callback(self.parameter_callback)
 
-        self.node.get_logger().info(f"[{self.window_name}] Created publishers on {self.image_topic}")
+        # self.node.get_logger().info(f"[{self.window_name}] Created publishers on {self.image_topic}")
 
+    # def parameter_callback(self, params):
+    #     for param in params:
+    #         if self.cf_id in param.name and param.name.startswith("rotate_img_"):
+    #             self.img_rotate = param.value
+    #             self.node.get_logger().info(f" Updated rotation for {self.cf_id} to {param.value}")
+    #     return SetParametersResult(successful=True)
 
     def _construct_camera_info(self, config):
         msg = CameraInfo()
@@ -103,7 +117,7 @@ class PerAddressStream:
         self.buffer.extend(chunk)
 
 
-    def process_image(self):
+    def process_image(self, img_rotate):
         now = time.time()
         if self.last_frame_time is not None:
             delta = now - self.last_frame_time
@@ -117,6 +131,9 @@ class PerAddressStream:
             if decoded is None:
                 self.node.get_logger().warn(f"[{self.cf_id}] Failed to decode image.")
                 return
+
+            if img_rotate != 0:
+                decoded = cv2.flip(decoded, -1) # flip both axes to achieve 180 degree rotation
 
             msg = self.bridge.cv2_to_imgmsg(decoded, encoding='mono8' if len(decoded.shape) == 2 else 'bgr8')
             ros_now = self.node.get_clock().now().to_msg()
@@ -149,6 +166,7 @@ class UDPImageStreamerNode(Node):
         config_path = self.get_parameter("aideck_config_path").get_parameter_value().string_value
         self.camera_info = None
         self.ip_to_cf = {}
+        self.img_rotate = {}
 
         if config_path:
             import yaml
@@ -159,15 +177,26 @@ class UDPImageStreamerNode(Node):
                 for cf_id, info in cameras.items():
                     ip = info["deck_ip"]
                     self.ip_to_cf[ip] = cf_id
-
+                    #dynamic parameter  for rotation
+                    self.declare_parameter(f'rotate_img_{cf_id}', 0)
+                    self.img_rotate[cf_id] = self.get_parameter(f'rotate_img_{cf_id}').get_parameter_value().integer_value
+        
         self.magic = MagicSender(self, self.sock, self.ip_to_cf)
 
         self.get_logger().info(f" UDP server listening on port {UDP_PORT}")
         self.timer = self.create_timer(0.001, self.poll_udp)
 
         self.magic_timer = self.create_timer(1.0, self.magic.check_and_send_magic)
+        self.add_on_set_parameters_callback(self.parameter_callback)
 
-
+    def parameter_callback(self, params):
+        for param in params:
+            if param.name.startswith('rotate_img_'):
+                cf_id = param.name[len('rotate_img_'):]
+                self.img_rotate[cf_id] = param.value
+                self.get_logger().info(f" Updated rotation for {cf_id} to {param.value}")
+        return SetParametersResult(successful=True)
+    
     def check_and_send_magic(self):
         self.magic.check_and_send_magic()
 
@@ -200,7 +229,7 @@ class UDPImageStreamerNode(Node):
         elif stream.receiving:
             stream.append_data(data[CPX_HEADER_SIZE:])
             if stream.expected_size is not None and len(stream.buffer) >= stream.expected_size:
-                stream.process_image()
+                stream.process_image(self.img_rotate[stream.cf_id])
 
 
 def main(args=None):
