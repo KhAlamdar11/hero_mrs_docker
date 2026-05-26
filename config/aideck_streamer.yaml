@@ -13,15 +13,24 @@ camera_info:
     data: [169.24, 0.0, 161.54, 0.0, 0.0, 169.97, 159.07, 0.0, 0.0, 0.0, 1.0, 0.0]
 
 cameras:
-  cf_1:
-    deck_ip: "192.168.0.141"
+  cf_1: #orange
+    deck_ip: "192.168.0.230"
     deck_port: 5000
-  # cf_2:
-  #   deck_ip: "192.168.0.141"
+  cf_2: #pink
+    deck_ip: "192.168.0.231"
+    deck_port: 5000
+  cf_3: #blue
+    deck_ip: "192.168.0.232"
+    deck_port: 5000
+  # cf_4: #green
+  #   deck_ip: "192.168.0.233"
   #   deck_port: 5000
-  # cf_3:
-  #   deck_ip: "192.168.0.60"
+  # cf_5: #purple
+  #   deck_ip: "192.168.0.234"
   #   deck_port: 5000
-  # cf_4:
-  #   deck_ip: "10.0.0.9"
+  # cf_6: #yellow
+  #   deck_ip: "192.168.0.235"
+  #   deck_port: 5000
+  # cf_7: #red
+  #   deck_ip: "192.168.0.237"
   #   deck_port: 5000

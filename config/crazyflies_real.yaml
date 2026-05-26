@@ -1,24 +1,39 @@
 # named list of all robots
 robots:
-  cf_1: #green
+  cf_1: #orange
     enabled: true
     uri: radio://0/90/2M/E7E7E7E7E7
-    initial_position: [0.0, 0.0 , 0.0]
+    initial_position: [-1.7, -0.33, 0.0]
     type: cf21  # see robot_types
-  cf_2: #red
-    enabled: false
-    uri: radio://0/80/2M/E7E7E7E7E7
-    initial_position: [0.0, -1.0, 0.0]
+  cf_2: #pink
+    enabled: true
+    uri: radio://0/95/2M/E7E7E7E7E7
+    initial_position: [-1.7, -0.89, 0.0]
     type: cf21  # see robot_types
   cf_3: #blue
-    enabled: false
-    uri: radio://0/100/2M/E7E7E7E7E0
-    initial_position: [0.0, 1.0, 0.0]
+    enabled: true
+    uri: radio://0/100/2M/E7E7E7E7E7
+    initial_position: [-1.7, 0.25, 0.0]
     type: cf21  # see robot_types
-  cf_4:
+  cf_4: #green
     enabled: false
     uri: radio://0/90/2M/E7E7E7E7E0
     initial_position: [1.25, -0.65, 0.0]
+    type: cf21  # see robot_types
+  cf_5: #purple
+    enabled: false
+    uri: radio://0/90/2M/E7E7E7E7E7
+    initial_position: [0.0, 0.0 , 0.0]
+    type: cf21  # see robot_types
+  cf_6: #yellow
+    enabled: false
+    uri: radio://0/95/2M/E7E7E7E7E0
+    initial_position: [0.0, -1.0, 0.0]
+    type: cf21  # see robot_types
+  cf_7: #red
+    enabled: false
+    uri: radio://0/100/2M/E7E7E7E7E7
+    initial_position: [0.0, 1.0, 0.0]
     type: cf21  # see robot_types
 # Definition of the various robot types
 robot_types:
@@ -76,6 +91,9 @@ all:
       velocity:
         frequency: 10 # Hz
         vars: ['kalman.statePX', 'kalman.statePY', 'kalman.statePZ',]
+      info:
+        frequency: 1 # Hz
+        vars: ['sys.canfly', 'sys.isFlying', 'sys.isTumbled']
   # firmware parameters for all drones (use robot_types/type_name to set per type, or
   # robots/drone_name to set per drone)
   firmware_params:

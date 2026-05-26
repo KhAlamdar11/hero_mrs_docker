@@ -96,6 +96,8 @@ class CrazyflieServer(Node):
         self.type_dict = {}
         self.connected = {}
         self.fully_connected = {}
+        self.cfs_positions = {}
+        self.cfs_info = {}
 
         # Assign default topic types, variables and callbacks
         self.default_log_type = {"pose": PoseStamped,
@@ -145,6 +147,11 @@ class CrazyflieServer(Node):
                     self.type_dict[uri] = type_cf
                     self.connected[uri] = True
                     self.fully_connected[uri] = False
+                    self.cfs_positions[crazyflie] = {'x': 0.0, 'y': 0.0, 'z': 0.0, 'yaw': 0.0, 'last_known_yaw': 0.0}
+                    self.cfs_info[crazyflie] = {'sys.canfly': False,
+                                                'sys.isFlying': False,
+                                                'sys.isTumbled': False}
+                    
 
         # Setup Swarm class cflib with connection callbacks and open the links
         factory = CachedCfFactory(rw_cache="./cache")
@@ -773,6 +780,8 @@ class CrazyflieServer(Node):
         pitch = radians(-1.0 * data.get('stabilizer.pitch'))
         yaw = radians(data.get('stabilizer.yaw'))
         q = tf_transformations.quaternion_from_euler(roll, pitch, yaw)
+        
+        self.cfs_positions[cf_name] = {'x': x, 'y': y, 'z': z, 'yaw': yaw, 'last_known_yaw': self.cfs_positions[cf_name]['last_known_yaw']}
 
         msg = PoseStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -908,6 +917,10 @@ class CrazyflieServer(Node):
         try:
             self.swarm._cfs[uri].logging["custom_log_publisher"][logconf.name].publish(
             msg)
+            if logconf.name == "info":
+                for log_name in data:
+                    self.cfs_info[log_name] = bool(data.get(log_name))
+            
         except:
             self.get_logger().info("Could not publish custom {logconf.name} message, stopping custom log")
             self.swarm._cfs[uri].logging["custom_log_groups"][logconf.name]["log_config"].stop()
@@ -1033,7 +1046,6 @@ class CrazyflieServer(Node):
                 if param_split[1] == "logs":
                     return SetParametersResult(successful=True)
 
-
         return SetParametersResult(successful=False)
 
     def _emergency_callback(self, request, response, uri="all"):
@@ -1073,6 +1085,7 @@ class CrazyflieServer(Node):
             a certain height in high level commander
         """
 
+        
 
         duration = float(request.duration.sec) + \
             float(request.duration.nanosec / 1e9)
@@ -1089,16 +1102,37 @@ class CrazyflieServer(Node):
                 )
             time.sleep(0.5)
             for link_uri in self.uris:
-                self.swarm._cfs[link_uri].cf.high_level_commander.takeoff(
-                    request.height, duration
+                ### reset estimator 
+                self.swarm._cfs[link_uri].cf.param.set_value('kalman.initialX', self.cfs_positions[self.cf_dict[link_uri]]['x'])
+                self.swarm._cfs[link_uri].cf.param.set_value('kalman.initialY', self.cfs_positions[self.cf_dict[link_uri]]['y'])
+                self.swarm._cfs[link_uri].cf.param.set_value('kalman.initialZ', self.cfs_positions[self.cf_dict[link_uri]]['z'])
+                self.swarm._cfs[link_uri].cf.param.set_value('kalman.initialYaw', self.cfs_positions[self.cf_dict[link_uri]]['last_known_yaw'])
+                if not self.cfs_info[self.cf_dict[link_uri]]['sys.isFlying']:
+                    self.swarm._cfs[link_uri].cf.param.set_value('kalman.resetEstimation', 1)
+        
+                self.get_logger().info(
+                    f"[{self.cf_dict[link_uri]}] estimator reset before takeoff to x:{self.cfs_positions[self.cf_dict[link_uri]]['x']} y:{self.cfs_positions[self.cf_dict[link_uri]]['y']} z:{self.cfs_positions[self.cf_dict[link_uri]]['z']} yaw:{self.cfs_positions[self.cf_dict[link_uri]]['last_known_yaw']}"
                 )
-        else:
+                self.swarm._cfs[link_uri].cf.high_level_commander.takeoff(
+                    request.height, duration, yaw=None
+                )
+        else:### reset estimator 
+            self.swarm._cfs[uri].cf.param.set_value('kalman.initialX', self.cfs_positions[self.cf_dict[uri]]['x'])
+            self.swarm._cfs[uri].cf.param.set_value('kalman.initialY', self.cfs_positions[self.cf_dict[uri]]['y'])
+            self.swarm._cfs[uri].cf.param.set_value('kalman.initialZ', self.cfs_positions[self.cf_dict[uri]]['z'])
+            self.swarm._cfs[uri].cf.param.set_value('kalman.initialYaw', self.cfs_positions[self.cf_dict[uri]]['last_known_yaw'])
+            if not self.cfs_info[self.cf_dict[uri]]['sys.isFlying']:
+                self.swarm._cfs[uri].cf.param.set_value('kalman.resetEstimation', 1)
+            
+            self.get_logger().info(
+                f"[{self.cf_dict[uri]}] estimator reset before takeoff to x:{self.cfs_positions[self.cf_dict[uri]]['x']} y:{self.cfs_positions[self.cf_dict[uri]]['y']} z:{self.cfs_positions[self.cf_dict[uri]]['z']} yaw:{self.cfs_positions[self.cf_dict[uri]]['last_known_yaw']}"
+            )
             self.swarm._cfs[uri].cf.platform.send_arming_request(
                     arm_bool
                 )
             time.sleep(0.5)
             self.swarm._cfs[uri].cf.high_level_commander.takeoff(
-                request.height, duration
+                request.height, duration, yaw=None
             )
 
         return response
@@ -1108,6 +1142,7 @@ class CrazyflieServer(Node):
         Service callback to make the crazyflie land to
             a certain height in high level commander
         """
+        
         duration = float(request.duration.sec) + \
             float(request.duration.nanosec / 1e9)
         self.get_logger().info(
@@ -1115,14 +1150,22 @@ class CrazyflieServer(Node):
             + f"duration={duration} s,"
             + f"group_mask={request.group_mask})"
         )
+        
         if uri == "all":
             for link_uri in self.uris:
+                current_yaw = self.cfs_positions[self.cf_dict[link_uri]]['yaw']
+                self.cfs_positions[self.cf_dict[link_uri]]['last_known_yaw'] = current_yaw
                 self.swarm._cfs[link_uri].cf.high_level_commander.land(
-                    request.height, duration, group_mask=request.group_mask
+                    request.height, duration, group_mask=request.group_mask, yaw=None
                 )
         else:
+            current_yaw = self.cfs_positions[self.cf_dict[uri]]['yaw']
+            self.cfs_positions[self.cf_dict[uri]]['last_known_yaw'] = current_yaw
+            self.get_logger().info(
+                f"[{self.cf_dict[uri]}] current yaw before land is {current_yaw} rad"
+            )
             self.swarm._cfs[uri].cf.high_level_commander.land(
-                request.height, duration, group_mask=request.group_mask
+                request.height, duration, group_mask=request.group_mask, yaw=current_yaw
             )
 
         return response
@@ -1150,6 +1193,12 @@ class CrazyflieServer(Node):
         )
         if uri == "all":
             for link_uri in self.uris:
+                # self.swarm._cfs[link_uri].cf.param.set_value('kalman.initialX', self.cfs_positions[self.cf_dict[link_uri]]['x'])
+                # self.swarm._cfs[link_uri].cf.param.set_value('kalman.initialY', self.cfs_positions[self.cf_dict[link_uri]]['y'])
+                # self.swarm._cfs[link_uri].cf.param.set_value('kalman.initialZ', self.cfs_positions[self.cf_dict[link_uri]]['z'])
+                # self.swarm._cfs[link_uri].cf.param.set_value('kalman.initialYaw', self.cfs_positions[self.cf_dict[link_uri]]['last_known_yaw'])
+                # if not self.cfs_info[self.cf_dict[link_uri]]['sys.isFlying']:
+                #     self.swarm._cfs[link_uri].cf.param.set_value('kalman.resetEstimation', 1)
                 self.swarm._cfs[link_uri].cf.high_level_commander.go_to(
                     request.goal.x,
                     request.goal.y,
@@ -1160,6 +1209,12 @@ class CrazyflieServer(Node):
                     group_mask=request.group_mask,
                 )
         else:
+            # self.swarm._cfs[uri].cf.param.set_value('kalman.initialX', self.cfs_positions[self.cf_dict[uri]]['x'])
+            # self.swarm._cfs[uri].cf.param.set_value('kalman.initialY', self.cfs_positions[self.cf_dict[uri]]['y'])
+            # self.swarm._cfs[uri].cf.param.set_value('kalman.initialZ', self.cfs_positions[self.cf_dict[uri]]['z'])
+            # self.swarm._cfs[uri].cf.param.set_value('kalman.initialYaw', self.cfs_positions[self.cf_dict[uri]]['last_known_yaw'])
+            # if not self.cfs_info[self.cf_dict[uri]]['sys.isFlying']:
+            #     self.swarm._cfs[uri].cf.param.set_value('kalman.resetEstimation', 1)
             self.swarm._cfs[uri].cf.high_level_commander.go_to(
                 request.goal.x,
                 request.goal.y,
