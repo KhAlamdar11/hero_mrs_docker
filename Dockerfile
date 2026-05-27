@@ -136,7 +136,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pytest-repeat \ 
     python3-pytest-rerunfailures \
     python-is-python3\
-    && pip install --upgrade pip rowan transforms3d nicegui
+    && pip install --upgrade pip rowan transforms3d nicegui keyboard 
 
 
 # SSH agent forwarding setup
@@ -178,7 +178,8 @@ RUN apt-get update &&  apt-get upgrade -y && apt-get install -y \
                    ros-${ROS2_DISTRO}-octomap-server \
                    ros-${ROS2_DISTRO}-octomap-msgs \
                    ros-${ROS2_DISTRO}-foxglove-bridge \
-                   ros-${ROS2_DISTRO}-rosbag2-storage-mcap
+                   ros-${ROS2_DISTRO}-rosbag2-storage-mcap \
+                   ros-${ROS2_DISTRO}-mqtt-client
 
 
 # ROS2 Workspace
