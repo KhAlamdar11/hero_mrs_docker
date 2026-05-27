@@ -1,0 +1,103 @@
+/**/*:
+  ros__parameters:
+    broker:
+      host: 192.168.0.100
+      port: 1883
+    bridge:
+      ros2mqtt:
+        ros_topics:
+          - /AGV/path
+          - /AGV/pose
+          - /AGV/pose_marker
+          - /AGV/pose_marker_array
+          - /cf_1/image
+          - /cf_1/pose
+          - /cf_1/status
+          - /cf_1/info
+          - /cf_1/velocity
+          - /cf_2/image
+          - /cf_2/pose
+          - /cf_2/status
+          - /cf_2/velocity
+          - /cf_2/info
+          - /cf_3/image
+          - /cf_3/pose
+          - /cf_3/status
+          - /cf_3/velocity
+          - /cf_3/info
+          - /mission_done
+          - /target_found
+        /AGV/path:
+          mqtt_topic: /mqtt/AGV/path
+          primitive: false
+        /AGV/pose:
+          mqtt_topic: /mqtt/AGV/pose
+          primitive: false
+        /AGV/pose_marker:
+          mqtt_topic: /mqtt/AGV/pose_marker
+          primitive: false
+        /AGV/pose_marker_array:
+          mqtt_topic: /mqtt/AGV/pose_marker_array
+          primitive: false
+        /cf_1/image:
+          mqtt_topic: /mqtt/cf_1/image
+          primitive: false
+        /cf_1/pose:
+          mqtt_topic: /mqtt/cf_1/pose
+          primitive: false
+        /cf_1/status:
+          mqtt_topic: /mqtt/cf_1/status
+          primitive: false
+        /cf_1/info:
+          mqtt_topic: /mqtt/cf_1/info
+          primitive: false
+        /cf_1/velocity:
+          mqtt_topic: /mqtt/cf_1/velocity
+          primitive: false
+        /cf_2/image:
+          mqtt_topic: /mqtt/cf_2/image
+          primitive: false
+        /cf_2/pose:
+          mqtt_topic: /mqtt/cf_2/pose
+          primitive: false
+        /cf_2/status:
+          mqtt_topic: /mqtt/cf_2/status
+          primitive: false
+        /cf_2/velocity:
+          mqtt_topic: /mqtt/cf_2/velocity
+          primitive: false
+        /cf_2/info:
+          mqtt_topic: /mqtt/cf_2/info
+          primitive: false
+        /cf_3/image:
+          mqtt_topic: /mqtt/cf_3/image
+          primitive: false
+        /cf_3/pose:
+          mqtt_topic: /mqtt/cf_3/pose
+          primitive: false
+        /cf_3/status:
+          mqtt_topic: /mqtt/cf_3/status
+          primitive: false
+        /cf_3/velocity:
+          mqtt_topic: /mqtt/cf_3/velocity
+          primitive: false
+        /cf_3/info:
+          mqtt_topic: /mqtt/cf_3/info
+          primitive: false
+        /mission_done:
+          mqtt_topic: /mqtt/mission_done
+          primitive: false
+        /target_found:
+          mqtt_topic: /mqtt/target_found
+          primitive: false
+      mqtt2ros:
+        mqtt_topics: 
+          - /mqtt/mission_start
+          - /mqtt/return_to_base
+        /mqtt/mission_start:
+          ros_topic: /mission_start
+          primitive: false
+        /mqtt/return_to_base:
+          ros_topic: /return_to_base
+          primitive: false
+
