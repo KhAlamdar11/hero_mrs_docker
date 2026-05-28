@@ -1,12 +1,12 @@
 # ICUAS26_finals
-This is the repo for the final stage of the ICUAS competition 2026. that will be held in Greece.
+This is the repo for the final stage of the ICUAS competition 2026. that will be held on Corfu in Greece.
 It is based  on the one for the [simulation stage](https://github.com/larics/icuas26_competition), so for the basic instructions on Docker installation please check that repo. This one is adapted for flying with real UAVs, therefore, before starting it, please follow the prerequisites instructions:
 
 ### Motion Capture tracking - prerequisites: 
 To obtain data from motion capture system, please install locally [NatNetSDK](https://github.com/whoenig/NatNetSDKCrossplatform) as given in README instructions.
 
 ### USB permissions - prerequisites: 
-Copy file: `to_copy/99-bitcraze.rules` to  `/etc/udev/rules.d` directory. Please check these links on USB permissions: [crazyradio](https://www.bitcraze.io/documentation/repository/crazyflie-lib-python/master/installation/usb_permissions/). This enables to use the USB Radio and Crazyflie 2 over USB without being root.
+Copy files locally: `to_copy/99-bitcraze.rules` to  `/etc/udev/rules.d` directory. Please check these links on USB permissions: [crazyradio](https://www.bitcraze.io/documentation/repository/crazyflie-lib-python/master/installation/usb_permissions/). This enables to use the USB Radio and Crazyflies over USB without being root.
 
 ## Run Crazyflies in the Docker container
 ### Setting up
@@ -30,7 +30,7 @@ docker build -t icuas26_finals_image .
 
 # This will create docker container icuas_competition container and position you into the container
 ```
-When first time in docker ros2 workspace will automatically build, everyother time you want to build the workspace run: 
+When first time in docker ros2 workspace will automatically build, every other time you want to build the workspace run: 
 ```
 cd ros2_ws
 colcon build --symlink-install
@@ -52,24 +52,24 @@ docker rm icuas26_finals_container
 ## Connecting to crazyflies
 To connect to crazyflie you must plug in the Crazyradio [flashed USB dongle](https://www.bitcraze.io/documentation/tutorials/getting-started-with-crazyradio-2-0/) into the laptop. 
 
-The general application [cfclient](https://www.bitcraze.io/documentation/repository/crazyflie-clients-python/master/userguides/userguide_client/)to connect to crazyflie can be started with (this shouldn't be running while crazyswarm2 and icuas26_finals packages are launched):
+The general application [cfclient](https://www.bitcraze.io/documentation/repository/crazyflie-clients-python/master/userguides/userguide_client/) to connect to crazyflie can be started with (this shouldn't be running while crazyswarm2 and icuas26_finals packages are launched):
 
 ```
 cfclient
 ```
-For connecting with ROS2 crazyswarm2 package follow [instructions] (https://imrclab.github.io/crazyswarm2/usage.html)
+For connecting with ROS2 crazyswarm2 package follow [instructions](https://imrclab.github.io/crazyswarm2/usage.html)
 
 ## Start:
 
-To connect with crazyflies with crazyswarm2 navigate to `/root/ros2_ws/src/icuas26_finals/startup`. and run `./start.sh`. This will start node to connect the camera to the wifi, crazyflie_server_reconnect (with reconnection property), octomap_server, aruco_detection and the emergency script. Mentioned programms are obligated to run the whole time during your run! You can start your code only after all crazyflies are fully connected. Once they are fully connected, the topic `/mission_start` will publish `True` message.
+To connect with crazyflies with crazyswarm2 navigate to `/root/ros2_ws/src/icuas26_finals/startup`. and run `./start.sh`. This will start node to connect the camera to the wifi, crazyflie_server_reconnect (with reconnection property), octomap_server, aruco_detection and the emergency script. Mentioned programms are obligated to run the whole time during your run! You can start your code only after all crazyflies are fully connected. Once they are fully connected, and everything works fine, the topic `/mission_start` will publish `True` message.
 
 
 ### Battery Monitoring
-Information about the battery is available on topic `/cf_x/status`, where `cf_x` is the namespace of a specific Crazyflie. Message type is [`Status`](https://github.com/IMRCLab/crazyswarm2/blob/main/crazyflie_interfaces/msg/Status.msg) defined in `crazyflie_interfaces` of `Crazyswarm2` repo. The field `battery_voltage` indicates battery level in Volts. You can either follow its status on your own, or/and  you can subscribe to topic `/battery_low`. This topic publishes `Bool` message. If `True` it signals that battery is at critical level and you have enough charge to safely return to base. Battery is considered fully charged if its voltage level is above 4V.
+Information about the battery is available on topic `/cf_x/status`, where `cf_x` is the namespace of a specific Crazyflie. Message type is [`Status`](https://github.com/IMRCLab/crazyswarm2/blob/main/crazyflie_interfaces/msg/Status.msg) defined in `crazyflie_interfaces` of `Crazyswarm2` repo. The field `battery_voltage` indicates battery level in Volts. You follow its status on your own. Battery is considered fully charged if its voltage level is above 4V and empty around 3.1V. Keep in mind that during the takeoff and height increase Voltage will drop, but the true status is shown during hovering or changing horizontal position. 
 
 
 ## INFO part
-If you are working in the group and you are all using the same network, please check [ROS_DOMAIN_ID](https://docs.ros.org/en/eloquent/Tutorials/Configuring-ROS2-Environment.html#the-ros-domain-id-variable) in .bashrc in container. Random number should be set during the build, however it is not impossible that some of you got the same number. If that is the situatation please change it, so that your simulations do  not crash.
+If you are working in the group and you are all using the same network, please check [ROS_DOMAIN_ID](https://docs.ros.org/en/eloquent/Tutorials/Configuring-ROS2-Environment.html#the-ros-domain-id-variable) in .bashrc in container. Random number should be set during the build, however it is not impossible that some of you got the same number. If that is the situatation please change it, so that your code do  not crash.
 
 General information about Crazyflies can be found [here](https://www.bitcraze.io/products/crazyflie-2-1/).
 
