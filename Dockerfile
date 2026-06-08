@@ -185,14 +185,17 @@ RUN apt-get update &&  apt-get upgrade -y && apt-get install -y \
 # ROS2 Workspace
 RUN mkdir -p $HOME/ros2_ws/src \
     && cd $HOME/ros2_ws/src \
-    && git clone https://github.com/IMRCLab/crazyswarm2 --recursive \
+    && git clone https://github.com/IMRCLab/crazyswarm2 \
+    && cd $HOME/ros2_ws/src/crazyswarm2 \
+    && git checkout 00c82daaa96055cad6d3ce4ea4749adc372ccaf9 \
+    && git submodule sync --recursive && git submodule update --init --recursive\
+    && cd $HOME/ros2_ws/src \
     && git clone https://github.com/JMU-ROBOTICS-VIVA/ros2_aruco.git \
     && git clone https://github.com/larics/icuas25_msgs.git \
     && git clone https://github.com/IMRCLab/motion_capture_tracking.git \
     && cd $HOME/ros2_ws/src/motion_capture_tracking \
     && git checkout 73da55a005c3c8ccd26e108ba627dbcd438f30f9 \
     && git submodule sync --recursive && git submodule update --init --recursive
-# RUN --mount=type=ssh cd $HOME/ros2_ws/src && git clone git@github.com:larics/hero_evaluation_benchmarking.git
 
 
 # Bash environment & aliases
