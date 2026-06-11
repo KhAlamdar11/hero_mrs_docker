@@ -67,6 +67,31 @@ To connect with crazyflies with crazyswarm2 navigate to `/root/ros2_ws/src/icuas
 ### Battery Monitoring
 Information about the battery is available on topic `/cf_x/status`, where `cf_x` is the namespace of a specific Crazyflie. Message type is [`Status`](https://github.com/IMRCLab/crazyswarm2/blob/main/crazyflie_interfaces/msg/Status.msg) defined in `crazyflie_interfaces` of `Crazyswarm2` repo. The field `battery_voltage` indicates battery level in Volts. You follow its status on your own. Battery is considered fully charged if its voltage level is above 4V and empty around 3.1V. Keep in mind that during the takeoff and height increase Voltage will drop, but the true status is shown during hovering or changing horizontal position. 
 
+### Competition_procedure
+For each benchmark world, you will receive the following files:
+
+- `setup.sh`
+- `AGV_path_icuas26_k.yaml`
+- A folder named `icuas26_k` containing the `.bt` and `.stl` models of the corresponding world
+
+Here, k denotes the world identifier (e.g., final, final2, test, test2, 1, 2, etc.). These files will be provided for testing and final evaluation runs via your team's OneDrive folder. The team leader will receive the corresponding access link.
+
+To deploy a new world:
+
+1. Replace the existing setup.sh file in:
+   `~/ros2_ws/src/icuas26_finals/startup/`
+
+2. Copy the icuas26_k folder to:
+   `~/ros2_ws/src/icuas26_finals/worlds/`
+
+3. Copy AGV_path_icuas26_k.yaml to:
+   `~/ros2_ws/src/icuas26_finals/config/`
+4. Rebuild the workspace:
+    `cd ~/ros2_ws`
+    `colcon build --symlink-install`
+
+After rebuilding, launch the system using the provided startup scripts.
+
 
 ## INFO part
 If you are working in the group and you are all using the same network, please check [ROS_DOMAIN_ID](https://docs.ros.org/en/eloquent/Tutorials/Configuring-ROS2-Environment.html#the-ros-domain-id-variable) in .bashrc in container. Random number should be set during the build, however it is not impossible that some of you got the same number. If that is the situatation please change it, so that your code do  not crash.
