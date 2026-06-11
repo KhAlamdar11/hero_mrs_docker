@@ -12,5 +12,5 @@ windows:
         - sleep 10;ros2 launch icuas26_finals aruco_recognition.launch.py
         - sleep 5;ros2 launch icuas26_finals octomap_server.launch.py
         - ros2 run mqtt_client mqtt_client --ros-args --params-file /root/ros2_ws/src/icuas26_finals/config/mqtt_icuas26_finals.yaml
-        #- ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+        - python /root/ros2_ws/src/icuas26_finals/scripts/joy_emergency.py
         - history -s "ros2 bag record -s mcap --all"
