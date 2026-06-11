@@ -67,7 +67,7 @@ To connect with crazyflies with crazyswarm2 navigate to `/root/ros2_ws/src/icuas
 ### Battery Monitoring
 Information about the battery is available on topic `/cf_x/status`, where `cf_x` is the namespace of a specific Crazyflie. Message type is [`Status`](https://github.com/IMRCLab/crazyswarm2/blob/main/crazyflie_interfaces/msg/Status.msg) defined in `crazyflie_interfaces` of `Crazyswarm2` repo. The field `battery_voltage` indicates battery level in Volts. You follow its status on your own. Battery is considered fully charged if its voltage level is above 4V and empty around 3.1V. Keep in mind that during the takeoff and height increase Voltage will drop, but the true status is shown during hovering or changing horizontal position. 
 
-### Competition_procedure
+## Competition procedure
 For each benchmark world, you will receive the following files:
 
 - `setup.sh`
