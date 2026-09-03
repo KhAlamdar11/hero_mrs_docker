@@ -183,11 +183,13 @@ RUN apt-get update &&  apt-get upgrade -y && apt-get install -y \
 
 
 # ROS2 Workspace
+#   crazyswarm2            fcf51e2 = tag 1.0.7 (2026-08-21)
+#   motion_capture_tracking 73da55a (2026-02-21, just after tag 1.0.6)
 RUN mkdir -p $HOME/ros2_ws/src \
     && cd $HOME/ros2_ws/src \
     && git clone https://github.com/IMRCLab/crazyswarm2 \
     && cd $HOME/ros2_ws/src/crazyswarm2 \
-    && git checkout 00c82daaa96055cad6d3ce4ea4749adc372ccaf9 \
+    && git checkout fcf51e27fe675bbdb564a40f4ca1ee4336c062ea \
     && git submodule sync --recursive && git submodule update --init --recursive\
     && cd $HOME/ros2_ws/src \
     && git clone https://github.com/JMU-ROBOTICS-VIVA/ros2_aruco.git \
