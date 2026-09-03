@@ -3,7 +3,7 @@ set -e
 
 
 IMAGE_NAME="icuas26_finals_image"
-CONTAINER_NAME="icuas26_finals_container"
+CONTAINER_NAME="mrs_icuas26finals"
 
 
 # X11 setup
@@ -54,6 +54,10 @@ docker run -it \
     --volume /var/run/dbus:/var/run/dbus:z \
     --volume ~/.ssh/ssh_auth_sock:/ssh-agent \
     --volume "$(pwd)":/root/ros2_ws/src/icuas26_finals:rw \
+    --volume /home/khawaja/HERO/agilex_sitl:/root/ros2_ws/src/agilex_sitl:rw \
+    --volume /home/khawaja/HERO/crazyflie_utils:/root/ros2_ws/src/crazyflie_utils:rw \
+    --volume /home/khawaja/HERO/hero_mrs_control_stack:/root/ros2_ws/src/hero_mrs_control_stack:rw \
+    --volume /home/khawaja/HERO/crazyflie_hardware_utils:/root/ros2_ws/src/crazyflie_hardware_utils:rw \
     --net host \
     --privileged \
     --gpus all \

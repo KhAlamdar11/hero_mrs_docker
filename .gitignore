@@ -1,0 +1,8 @@
+# Generated at runtime by the crazyflie startup scripts
+startup/cache/
+startup/log*.csv
+startup/params*.csv
+
+# Python
+__pycache__/
+*.py[cod]

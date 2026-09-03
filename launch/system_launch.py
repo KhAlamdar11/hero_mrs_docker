@@ -34,11 +34,11 @@ def generate_launch_description():
         server_yaml_content = yaml.safe_load(ymlfile)
 
     server_params = [crazyflies] + [server_yaml_content['/crazyflie_server']['ros__parameters']]
-    # robot description
+    # robot description -- CHANGED
     urdf = os.path.join(
-        get_package_share_directory('crazyflie'),
-        'urdf',
-        'crazyflie_description.urdf')
+    get_package_share_directory('crazyflie_description'),
+    'urdf',
+    'crazyflie_description.urdf')
     
     with open(urdf, 'r') as f:
         robot_desc = f.read()
@@ -85,6 +85,14 @@ def generate_launch_description():
             output='screen',
             parameters=server_params
         ))
+    # launch_description.append(
+    # Node(
+    #     package='crazyflie_server_cpp',
+    #     executable='crazyflie_server',
+    #     name='crazyflie_server',
+    #     output='screen',
+    #     parameters=server_params
+    # ))
     
    
     launch_description.append(
@@ -102,8 +110,8 @@ def generate_launch_description():
     for i in range(1, int(num_bots) + 1):
         namespace = f'cf_{i}'
         vel_mux_node = Node(
-            package='crazyflie',
-            executable='vel_mux.py',
+            package='crazyflie_examples',
+            executable='vel_mux',
             name=f'vel_mux{i}',
             output='screen',
             namespace=namespace,
@@ -123,19 +131,19 @@ def generate_launch_description():
     
     AGV_vel = float(os.environ.get('AGV_VEL', '0.3'))
     
-    launch_description.append(
-        Node(
-           package='icuas26_finals',
-           executable='AGV.py',
-           name='AGV',
-           namespace='AGV',
-           output='screen',
-           parameters=[
-                {"velocity": AGV_vel},
-                {"publish_rate": 10.0},
-                {"yaml_path": AGV_yaml_path}
-            ]
-       ))
+    # launch_description.append(
+    #     Node(
+    #        package='icuas26_finals',
+    #        executable='AGV.py',
+    #        name='AGV',
+    #        namespace='AGV',
+    #        output='screen',
+    #        parameters=[
+    #             {"velocity": AGV_vel},
+    #             {"publish_rate": 10.0},
+    #             {"yaml_path": AGV_yaml_path}
+    #         ]
+    #    ))
     
     launch_description.append(       
         Node(

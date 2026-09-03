@@ -75,6 +75,26 @@ type_cf_param_to_index = {
     'double': 0x07
 }
 
+# bit positions inside the supervisor.info log variable,
+# see crazyflie-firmware src/modules/src/supervisor.c
+supervisor_info_bits = {
+    "can_be_armed": 0,              # accepts an arming command
+    "is_armed": 1,
+    "auto_arm": 2,                  # configured to arm automatically
+    "can_fly": 3,                   # ready to fly
+    "is_flying": 4,
+    "is_tumbled": 5,                # upside down
+    "is_locked": 6,                 # must be restarted
+    "is_crashed": 7,
+    "hl_is_flying": 8,              # high level control is actively flying the drone
+    "hl_trajectory_finished": 9,
+    "hl_disabled": 10,              # high level control produces no setpoints
+    "deck_fault": 11,               # a deck reported a hardware fault
+}
+
+# states in which re-sending a takeoff is pointless and unsafe
+supervisor_no_retry_bits = ("is_tumbled", "is_locked", "is_crashed")
+
 
 class CrazyflieServer(Node):
     def __init__(self):
@@ -98,6 +118,8 @@ class CrazyflieServer(Node):
         self.fully_connected = {}
         self.cfs_positions = {}
         self.cfs_info = {}
+        self.cfs_info_stamp = {}
+        self.cfs_supervisor = {}
 
         # Assign default topic types, variables and callbacks
         self.default_log_type = {"pose": PoseStamped,
@@ -151,6 +173,10 @@ class CrazyflieServer(Node):
                     self.cfs_info[crazyflie] = {'sys.canfly': False,
                                                 'sys.isFlying': False,
                                                 'sys.isTumbled': False}
+                    self.cfs_info_stamp[crazyflie] = 0.0
+                    self.cfs_supervisor[crazyflie] = dict(
+                        {key: False for key in supervisor_info_bits},
+                        raw=0, stamp=0.0)
                     
 
         # Setup Swarm class cflib with connection callbacks and open the links
@@ -286,7 +312,31 @@ class CrazyflieServer(Node):
                                    " or if your script have proper access to a Crazyradio PA")
             exit()
         self._init_topics_and_services()
-        
+
+        # Takeoff watchdog: sometimes the arming request or the takeoff packet is
+        # lost and the Crazyflie simply stays on the ground. Monitor the supervisor
+        # state after every takeoff and re-send it if the drone never lifts off.
+        takeoff_watchdog_params = {}
+        try:
+            takeoff_watchdog_params = self._ros_parameters['all']["takeoff_watchdog"]
+        except KeyError:
+            pass
+        self.takeoff_watchdog_enabled = bool(
+            takeoff_watchdog_params.get("enabled", True))
+        self.takeoff_watchdog_check_delay = float(
+            takeoff_watchdog_params.get("check_delay", 1.0))
+        self.takeoff_watchdog_max_retries = int(
+            takeoff_watchdog_params.get("max_retries", 3))
+        self.takeoff_watchdog_z_margin = float(
+            takeoff_watchdog_params.get("z_margin", 0.12))
+        self.takeoff_watchdog_status_timeout = float(
+            takeoff_watchdog_params.get("status_timeout", 3.0))
+        self.takeoff_watchdog_threads = {}
+        self.takeoff_watchdog_cancel = {}
+        for uri in self.uris:
+            self.takeoff_watchdog_threads[uri] = None
+            self.takeoff_watchdog_cancel[uri] = None
+
         self.cf_threads = {}
         self.cf_threads_time_open = {}
         self.closing_link = {}
@@ -505,10 +555,10 @@ class CrazyflieServer(Node):
                 depth=1,
                 deadline = Duration(seconds=0, nanoseconds=1e9/24.0))
 
-            self.create_subscription(
-                NamedPoseArray, "/poses",
-                self._poses_changed, qos_profile
-            )
+        self.create_subscription(
+            NamedPoseArray, "/poses",
+            self._poses_changed, qos_profile
+        )
 
         self.mission_start = False
         self.mission_start_pub = self.create_publisher(Bool, "/mission_start", 10)
@@ -888,6 +938,7 @@ class CrazyflieServer(Node):
 
         # From logging statistics
         msg.supervisor_info = data.get('supervisor.info')
+        self._update_supervisor_info(uri, data.get('supervisor.info'))
         msg.battery_voltage = data.get('pm.vbatMV') / 1000.0
         msg.pm_state = data.get('pm.state')
         msg.rssi = data.get('radio.rssi')
@@ -914,13 +965,16 @@ class CrazyflieServer(Node):
         for log_name in data:
             msg.values.append(data.get(log_name))
 
+        if logconf.name == "info":
+            cf_name = self.cf_dict[uri]
+            for log_name in data:
+                if log_name in self.cfs_info[cf_name]:
+                    self.cfs_info[cf_name][log_name] = bool(data.get(log_name))
+            self.cfs_info_stamp[cf_name] = self.get_clock().now().nanoseconds * 1e-9
+
         try:
             self.swarm._cfs[uri].logging["custom_log_publisher"][logconf.name].publish(
             msg)
-            if logconf.name == "info":
-                for log_name in data:
-                    self.cfs_info[log_name] = bool(data.get(log_name))
-            
         except:
             self.get_logger().info("Could not publish custom {logconf.name} message, stopping custom log")
             self.swarm._cfs[uri].logging["custom_log_groups"][logconf.name]["log_config"].stop()
@@ -1049,6 +1103,8 @@ class CrazyflieServer(Node):
         return SetParametersResult(successful=False)
 
     def _emergency_callback(self, request, response, uri="all"):
+        self._cancel_takeoff_watchdog(uri)
+
         if uri == "all":
             for link_uri in self.uris:
                 self.swarm._cfs[link_uri].cf.loc.send_emergency_stop()
@@ -1067,6 +1123,9 @@ class CrazyflieServer(Node):
         self.get_logger().info(
             f"[{self.cf_dict[uri]}] Arm request is {arm_bool} "
         )
+
+        if not arm_bool:
+            self._cancel_takeoff_watchdog(uri)
         if uri == "all":
             for link_uri in self.uris:
                 self.swarm._cfs[link_uri].cf.platform.send_arming_request(
@@ -1078,6 +1137,139 @@ class CrazyflieServer(Node):
                 )
 
         return response
+
+    def _update_supervisor_info(self, uri, info):
+        """
+        Decode the supervisor.info bitfield into the per crazyflie state cache
+        """
+        if info is None:
+            return
+
+        state = self.cfs_supervisor[self.cf_dict[uri]]
+        for name, bit in supervisor_info_bits.items():
+            state[name] = bool(int(info) & (1 << bit))
+        state["raw"] = int(info)
+        state["stamp"] = self.get_clock().now().nanoseconds * 1e-9
+
+    def _supervisor_str(self, cf_name):
+        """
+        Human readable summary of the cached supervisor state, for logging
+        """
+        state = self.cfs_supervisor[cf_name]
+        flags = [name for name in supervisor_info_bits if state[name]]
+        return f"supervisor.info={state['raw']} [{', '.join(flags) if flags else 'none'}]"
+
+    def _is_flying(self, uri, start_z=None):
+        """
+        Best effort check whether the crazyflie actually left the ground,
+            based on the supervisor state and, as a backup, on the height
+        """
+        cf_name = self.cf_dict[uri]
+        state = self.cfs_supervisor[cf_name]
+        now = self.get_clock().now().nanoseconds * 1e-9
+
+        if (state["is_flying"] or state["hl_is_flying"]) and \
+                (now - state["stamp"]) < self.takeoff_watchdog_status_timeout:
+            return True
+        if self.cfs_info[cf_name]["sys.isFlying"] and \
+                (now - self.cfs_info_stamp[cf_name]) < self.takeoff_watchdog_status_timeout:
+            return True
+        if start_z is not None:
+            return self.cfs_positions[cf_name]["z"] > start_z + self.takeoff_watchdog_z_margin
+
+        return False
+
+    def _start_takeoff_watchdog(self, uri, height, duration):
+        """
+        Start monitoring a takeoff that was just sent to a single crazyflie
+        """
+        if not self.takeoff_watchdog_enabled or self.takeoff_watchdog_max_retries <= 0:
+            return
+
+        self._cancel_takeoff_watchdog(uri)
+
+        cancel = threading.Event()
+        self.takeoff_watchdog_cancel[uri] = cancel
+        start_z = self.cfs_positions[self.cf_dict[uri]]["z"]
+        self.takeoff_watchdog_threads[uri] = threading.Thread(
+            target=self._takeoff_watchdog,
+            args=(uri, height, duration, start_z, cancel),
+            daemon=True,
+        )
+        self.takeoff_watchdog_threads[uri].start()
+
+    def _cancel_takeoff_watchdog(self, uri="all"):
+        """
+        Stop the takeoff monitoring, e.g. when a land, an emergency or a
+            low level setpoint takes over the control of the crazyflie
+        """
+        if uri != "all" and self.takeoff_watchdog_cancel.get(uri) is None:
+            return
+
+        uris = self.uris if uri == "all" else [uri]
+        for link_uri in uris:
+            cancel = self.takeoff_watchdog_cancel.get(link_uri)
+            if cancel is not None:
+                cancel.set()
+            self.takeoff_watchdog_cancel[link_uri] = None
+
+    def _takeoff_watchdog(self, uri, height, duration, start_z, cancel):
+        """
+        Re-send the takeoff as long as the supervisor does not report flying.
+            Note that the estimator is deliberately not reset again here, the
+            crazyflie could already be in the air when a retry is sent.
+        """
+        cf_name = self.cf_dict[uri]
+
+        for attempt in range(1, self.takeoff_watchdog_max_retries + 1):
+            if cancel.wait(self.takeoff_watchdog_check_delay):
+                return
+            if self._is_flying(uri, start_z):
+                if attempt > 1:
+                    self.get_logger().info(
+                        f"[{cf_name}] took off after {attempt - 1} retry/retries"
+                    )
+                return
+            if not self.connected.get(uri, False):
+                self.get_logger().warning(
+                    f"[{cf_name}] did not take off and is not connected, no takeoff retry"
+                )
+                return
+
+            state = self.cfs_supervisor[cf_name]
+            blocking = [bit for bit in supervisor_no_retry_bits if state[bit]]
+            if blocking:
+                self.get_logger().warning(
+                    f"[{cf_name}] did not take off and is {'/'.join(blocking)}"
+                    + f" ({self._supervisor_str(cf_name)}), no takeoff retry"
+                )
+                return
+
+            self.get_logger().warning(
+                f"[{cf_name}] is not flying {self.takeoff_watchdog_check_delay} s after takeoff"
+                + f" ({self._supervisor_str(cf_name)}), retry {attempt}"
+                + f"/{self.takeoff_watchdog_max_retries}"
+            )
+            try:
+                self.swarm._cfs[uri].cf.platform.send_arming_request(True)
+                if cancel.wait(0.2):
+                    return
+                self.swarm._cfs[uri].cf.high_level_commander.takeoff(
+                    height, duration, yaw=None
+                )
+            except Exception as e:
+                self.get_logger().warning(
+                    f"[{cf_name}] could not retry takeoff! Got error:{e}"
+                )
+                return
+
+        if cancel.wait(self.takeoff_watchdog_check_delay):
+            return
+        if not self._is_flying(uri, start_z):
+            self.get_logger().error(
+                f"[{cf_name}] still not flying after {self.takeoff_watchdog_max_retries}"
+                + f" takeoff retries ({self._supervisor_str(cf_name)}), giving up"
+            )
 
     def _takeoff_callback(self, request, response, uri="all"):
         """
@@ -1116,6 +1308,7 @@ class CrazyflieServer(Node):
                 self.swarm._cfs[link_uri].cf.high_level_commander.takeoff(
                     request.height, duration, yaw=None
                 )
+                self._start_takeoff_watchdog(link_uri, request.height, duration)
         else:### reset estimator 
             self.swarm._cfs[uri].cf.param.set_value('kalman.initialX', self.cfs_positions[self.cf_dict[uri]]['x'])
             self.swarm._cfs[uri].cf.param.set_value('kalman.initialY', self.cfs_positions[self.cf_dict[uri]]['y'])
@@ -1134,6 +1327,7 @@ class CrazyflieServer(Node):
             self.swarm._cfs[uri].cf.high_level_commander.takeoff(
                 request.height, duration, yaw=None
             )
+            self._start_takeoff_watchdog(uri, request.height, duration)
 
         return response
 
@@ -1150,7 +1344,9 @@ class CrazyflieServer(Node):
             + f"duration={duration} s,"
             + f"group_mask={request.group_mask})"
         )
-        
+
+        self._cancel_takeoff_watchdog(uri)
+
         if uri == "all":
             for link_uri in self.uris:
                 current_yaw = self.cfs_positions[self.cf_dict[link_uri]]['yaw']
@@ -1175,6 +1371,8 @@ class CrazyflieServer(Node):
         Service callback to have the crazyflie go to
             a certain position in high level commander
         """
+        self._cancel_takeoff_watchdog(uri)
+
         duration = float(request.duration.sec) + \
             float(request.duration.nanosec / 1e9)
 
@@ -1349,6 +1547,8 @@ class CrazyflieServer(Node):
         Topic update callback to control the attitude and thrust
             of the crazyflie with teleop
         """
+        self._cancel_takeoff_watchdog(uri)
+
         if not hasattr(self.swarm._cfs[uri], 'legacy_initialized'):
             self.swarm._cfs[uri].cf.commander.send_setpoint(0.0, 0.0, 0.0, 0)
             time.sleep(0.01)
@@ -1366,6 +1566,8 @@ class CrazyflieServer(Node):
         Topic update callback to control the position command
             of the crazyflie 
         """
+        self._cancel_takeoff_watchdog(uri)
+
         x = msg.x
         y = msg.y
         z = msg.z
@@ -1378,6 +1580,8 @@ class CrazyflieServer(Node):
         Topic update callback to control the world velocity command
             of the crazyflie
         """
+        self._cancel_takeoff_watchdog(uri)
+
         vel = msg.vel
         vx = vel.x
         vy = vel.y
@@ -1391,6 +1595,8 @@ class CrazyflieServer(Node):
         Topic update callback to control the hover command
             of the crazyflie from the velocity multiplexer (vel_mux)
         """
+        self._cancel_takeoff_watchdog(uri)
+
         vx = msg.vx
         vy = msg.vy
         z = msg.z_distance
@@ -1402,6 +1608,8 @@ class CrazyflieServer(Node):
         """
         Topic update callback to full state cmd topic
         """
+        self._cancel_takeoff_watchdog(uri)
+
         pos = [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]
         vel = [msg.twist.linear.x, msg.twist.linear.y, msg.twist.linear.z]
         acc = [msg.acc.x, msg.acc.y, msg.acc.z]

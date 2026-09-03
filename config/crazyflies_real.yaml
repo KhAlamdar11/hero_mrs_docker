@@ -1,39 +1,39 @@
 # named list of all robots
 robots:
-  cf_1: #orange
+  cf_1: #red
     enabled: true
-    uri: radio://0/90/2M/E7E7E7E7E7
-    initial_position: [-1.7, -0.33, 0.0]
+    uri: radio://0/90/2M/E7E7E7E7E1
+    initial_position: [-0.625,0.625, 0.0]
     type: cf21  # see robot_types
-  cf_2: #pink
+  cf_2: #green
     enabled: true
-    uri: radio://0/95/2M/E7E7E7E7E7
-    initial_position: [-1.7, -0.89, 0.0]
+    uri: radio://0/90/2M/E7E7E7E7E2
+    initial_position: [-0.625, 0.0, 0.0]
     type: cf21  # see robot_types
   cf_3: #blue
     enabled: true
-    uri: radio://0/100/2M/E7E7E7E7E7
-    initial_position: [-1.7, 0.25, 0.0]
+    uri: radio://0/90/2M/E7E7E7E7E3
+    initial_position: [-0.625, -0.625, 0.0]
     type: cf21  # see robot_types
-  cf_4: #green
-    enabled: false
-    uri: radio://0/90/2M/E7E7E7E7E0
-    initial_position: [1.25, -0.65, 0.0]
+  # cf_4: #yellow FRONT LEFT ESC ISSUE!
+  #   enabled: false
+  #   uri: radio://0/90/2M/E7E7E7E7E4
+  #   initial_position: [1.25, -0.65, 0.0]
+  #   type: cf21  # see robot_types
+  cf_4: #purple
+    enabled: true
+    uri: radio://0/99/2M/E7E7E7E7E5
+    initial_position: [0.625, 0.625 , 0.0]
     type: cf21  # see robot_types
-  cf_5: #purple
-    enabled: false
-    uri: radio://0/90/2M/E7E7E7E7E7
-    initial_position: [0.0, 0.0 , 0.0]
+  cf_5: #pink
+    enabled: true
+    uri: radio://0/99/2M/E7E7E7E7E6
+    initial_position: [0.625, 0.0, 0.0]
     type: cf21  # see robot_types
-  cf_6: #yellow
-    enabled: false
-    uri: radio://0/95/2M/E7E7E7E7E0
-    initial_position: [0.0, -1.0, 0.0]
-    type: cf21  # see robot_types
-  cf_7: #red
-    enabled: false
-    uri: radio://0/100/2M/E7E7E7E7E7
-    initial_position: [0.0, 1.0, 0.0]
+  cf_6: #orange
+    enabled: true
+    uri: radio://0/99/2M/E7E7E7E7E7
+    initial_position: [0.625, -0.625, 0.0]
     type: cf21  # see robot_types
 # Definition of the various robot types
 robot_types:
@@ -113,6 +113,13 @@ all:
       extQuatStdDev: 0.5e-1
     # kalman:
     #   resetEstimation: 1
+  # re-send a takeoff when the supervisor does not report the drone as flying
+  takeoff_watchdog:
+    enabled: true
+    check_delay: 1.0    # s, time given to the drone to lift off before a retry
+    max_retries: 3      # number of takeoff retries per takeoff request
+    z_margin: 0.12      # m, height increase that also counts as a successful takeoff
+    status_timeout: 3.0 # s, max age of the supervisor status used for the check
   broadcasts:
     num_repeats: 15 # number of times broadcast commands are repeated
     delay_between_repeats_ms: 1 # delay in milliseconds between individual repeats
