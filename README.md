@@ -12,7 +12,7 @@ Do these two steps at home. They take about an hour, mostly downloading.
 
 ### Step 1: Install Docker
 
-You need Ubuntu 22.04 or 24.04 and about 20 GB of free disk space.
+You need Ubuntu 22.04 or 24.04 and about 25 GB of free disk space. Check the `Avail` column of `df -h /`.
 
 1. Install the tools you need for the next steps:
    ```bash
@@ -23,6 +23,7 @@ You need Ubuntu 22.04 or 24.04 and about 20 GB of free disk space.
    curl -fsSL https://get.docker.com -o get-docker.sh
    sudo sh get-docker.sh
    ```
+   If Docker is already installed, the script warns you and waits 20 seconds. Let it continue: it updates Docker and keeps your images.
 3. Let your user run Docker without `sudo`:
    ```bash
    sudo usermod -aG docker $USER
@@ -34,7 +35,7 @@ You need Ubuntu 22.04 or 24.04 and about 20 GB of free disk space.
    ```
 5. Only if your laptop has an NVIDIA GPU, which means `nvidia-smi` prints a table: install the NVIDIA Container Toolkit.
    ```bash
-   curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+   curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --yes --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
    curl -fsSL https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
    sudo apt update && sudo apt install -y nvidia-container-toolkit
    sudo nvidia-ctk runtime configure --runtime=docker
@@ -136,6 +137,9 @@ colcon build --symlink-install --packages-select hero_sim
 
 | Problem | What to do |
 |---|---|
+| `sudo apt update` fails with `NO_PUBKEY`, `EXPKEYSIG` or `is not signed` | The error names a repository that's broken on your laptop, often an old ROS one. Fix it or delete its file in `/etc/apt/sources.list.d/`, then try again |
+| You already had Docker from snap (`snap list docker` lists it) | Two Dockers clash. Remove the snap one with `sudo snap remove docker` (this deletes its images) and restart |
+| You already had Docker Desktop (`docker context ls` marks `desktop-linux` with `*`) | Switch to the Docker from step 1: `docker context use default` |
 | `permission denied` when running `docker` | Do [step 1.3](#step-1-install-docker) and restart your laptop |
 | The build stops with a network error | Run the same `docker build` again. It continues where it stopped |
 | `could not select device driver "" with capabilities: [[gpu]]` | No NVIDIA GPU or toolkit: do step 2 of [Create the container](#create-the-container-once) |
