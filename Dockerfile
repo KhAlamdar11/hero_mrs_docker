@@ -160,8 +160,7 @@ RUN apt-get update && apt-get install -y locales curl gnupg lsb-release \
 
 # MCAP CLI
 RUN VERSION="releases/mcap-cli/v0.0.55" && \
-    RELEASE_URL=$(curl -s https://api.github.com/repos/foxglove/mcap/releases | jq -r --arg VERSION "$VERSION" '.[] | select(.tag_name == $VERSION) | .assets[0].browser_download_url') && \
-    curl -L -o /bin/mcap "$RELEASE_URL" && chmod +x /bin/mcap
+    curl -fL -o /bin/mcap "https://github.com/foxglove/mcap/releases/download/$VERSION/mcap-linux-amd64" && chmod +x /bin/mcap
 
 #Avoiding venv issues with ROS2 Humble and Python 3.10
 RUN PYTHON_VERSION=$(python --version | cut -d " " -f2 | cut -d "." -f1,2) && \
