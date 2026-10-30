@@ -8,11 +8,14 @@ New to Docker, tmux or the robots? Do the [tutorial](tutorial/README.md) after t
 
 ## Before the first session
 
-Do these two steps at home. They take about an hour, mostly downloading.
+> [!IMPORTANT]
+> **You need:**
+> - **Ubuntu 22.04 or 24.04** on your laptop
+> - **20–25 GB of free disk space**. Check the `Avail` column of `df -h /`
+
+Do these three steps at home. They take about an hour, mostly downloading.
 
 ### Step 1: Install Docker
-
-You need Ubuntu 22.04 or 24.04 and about 25 GB of free disk space. Check the `Avail` column of `df -h /`.
 
 1. Install the tools you need for the next steps:
    ```bash
@@ -59,20 +62,41 @@ You need Ubuntu 22.04 or 24.04 and about 25 GB of free disk space. Check the `Av
    docker images
    ```
 
-## Create the container (once)
+### Step 3: Create the container and run the example
 
-1. Open `first_run.sh` and set `MY_PACKAGE_PATH` at the top to the folder of your own ROS 2 package on your laptop:
+1. Download the student package, where you'll write your code:
    ```bash
-   MY_PACKAGE_PATH="/home/ivo/my_package"
+   cd ~
+   git clone https://github.com/KhAlamdar11/undergrad_project_mrs.git
    ```
-   This is where you'll write your code. If you don't have a package yet, make an empty folder and use that.
-2. If your laptop has no NVIDIA GPU (you skipped step 1.5), delete the `--gpus all \` line in `first_run.sh`.
-3. In the `hero_mrs_docker` folder, run:
+2. Open `~/hero_mrs_docker/first_run.sh` and set `MY_PACKAGE_PATH` at the top to that folder:
    ```bash
+   MY_PACKAGE_PATH="~/undergrad_project_mrs"
+   ```
+3. If your laptop has no NVIDIA GPU (you skipped step 1.5), delete the `--gpus all \` line in `first_run.sh`.
+4. Allow the container to open windows on your screen. This line makes every new terminal do it:
+   ```bash
+   echo 'xhost +local: > /dev/null 2>&1' >> ~/.bashrc
+   source ~/.bashrc
+   ```
+5. Create the container. It builds the workspace (a few minutes) and opens a terminal inside the container:
+   ```bash
+   cd ~/hero_mrs_docker
    ./first_run.sh
    ```
+6. In that terminal, start the simulator. RViz opens:
+   ```bash
+   cd ~/ros2_ws/src/hero_sim/startup
+   bash start.sh tether_demo.yaml
+   ```
+7. Open a new tmux window with `Ctrl+b`, then `c`, and run the example mission:
+   ```bash
+   ros2 run undergrad_project_mrs mission_template
+   ```
+   In RViz, the ground robot drives, the drone takes off and lands, and the winch pulls the tether. It prints `done` at the end.
+8. Stop the simulator with `Ctrl+b`, then `k`. Leave the container with `exit`.
 
-This creates a container called `hero_mrs_container`, builds the ROS 2 workspace (a few minutes) and opens a terminal inside it. Your package is in the container at `~/ros2_ws/src/my_package` (the name of your folder).
+Your package is in the container at `~/ros2_ws/src/undergrad_project_mrs`. It's the same folder as `~/undergrad_project_mrs` on your laptop, so you can edit the code on your laptop and run it in the container.
 
 The package folder is set when the container is created. To change it later, set `MY_PACKAGE_PATH` again and [start over](#start-over-with-a-fresh-container).
 
@@ -142,10 +166,10 @@ colcon build --symlink-install --packages-select hero_sim
 | You already had Docker Desktop (`docker context ls` marks `desktop-linux` with `*`) | Switch to the Docker from step 1: `docker context use default` |
 | `permission denied` when running `docker` | Do [step 1.3](#step-1-install-docker) and restart your laptop |
 | The build stops with a network error | Run the same `docker build` again. It continues where it stopped |
-| `could not select device driver "" with capabilities: [[gpu]]` | No NVIDIA GPU or toolkit: do step 2 of [Create the container](#create-the-container-once) |
+| `could not select device driver "" with capabilities: [[gpu]]` | No NVIDIA GPU or toolkit: do [step 3.3](#step-3-create-the-container-and-run-the-example) |
 | `Conflict. The container name "/hero_mrs_container" is already in use` | The container already exists: `docker start -i hero_mrs_container` |
 | `No such container: hero_mrs_container` | Create it with `./first_run.sh` |
-| `Set MY_PACKAGE_PATH at the top of first_run.sh ...` | Do step 1 of [Create the container](#create-the-container-once). The folder must exist |
+| `Set MY_PACKAGE_PATH at the top of first_run.sh ...` | Do [step 3.2](#step-3-create-the-container-and-run-the-example). The folder must exist |
 | On your laptop, you can't save a file in your package (`permission denied`) | Files made inside the container belong to root. On your laptop: `sudo chown -R $USER <your package folder>` |
-| RViz doesn't open (`could not connect to display`) | On your laptop, run `xhost +local:` and try again |
+| RViz doesn't open (`could not connect to display`) | Do [step 3.4](#step-3-create-the-container-and-run-the-example), then open a new terminal and try again |
 | `Package '...' not found` | Build the workspace (see [What's saved where](#whats-saved-where)) and open a new terminal |

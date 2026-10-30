@@ -30,7 +30,7 @@ Common commands. Run them on your laptop, not in the container:
 
 ### Hands-on #1
 
-1. Build the image and create the container: follow [Build the image](../README.md#build-the-image-once) and [Create the container](../README.md#create-the-container-once) in the main README. You end up in a terminal inside the container.
+1. Do steps 1 to 3 of [Before the first session](../README.md#before-the-first-session) in the main README. Then start the container with `docker start -i hero_mrs_container`.
 2. Look at the ROS 2 workspace:
     ```bash
     ls ~/ros2_ws/src
