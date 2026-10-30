@@ -4,12 +4,12 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    aideck_config_path = os.path.join(get_package_share_directory('icuas26_finals'),
+    aideck_config_path = os.path.join(get_package_share_directory('hero_mrs'),
                                                                   'config',
                                                                   'aideck_streamer.yaml')
     launch_description = []
     launch_description.append(Node(
-                                package="icuas26_finals",
+                                package="hero_mrs",
                                 executable="aideck_streamer_tcp.py",
                                 name="aideck_streamer_tcp",
                                 parameters=[{"aideck_config_path": aideck_config_path}]))

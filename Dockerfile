@@ -203,7 +203,7 @@ RUN mkdir -p $HOME/ros2_ws/src \
 # Bash environment & aliases
 RUN echo "alias ros2_ws='source $HOME/ros2_ws/install/setup.bash'" >> $HOME/.bashrc && \
     echo "alias source_ros2='source /opt/ros/${ROS2_DISTRO}/setup.bash'" >> $HOME/.bashrc && \
-    echo "alias cd_icuas26_finals='cd $HOME/ros2_ws/src/icuas26_finals'" >> $HOME/.bashrc && \
+    echo "alias cd_hero_mrs='cd $HOME/ros2_ws/src/hero_mrs'" >> $HOME/.bashrc && \
     echo "export ROS_LOCALHOST_ONLY=1" >> $HOME/.bashrc && \
     echo "export ROS_DOMAIN_ID=$(shuf -i 1-101 -n 1)" >> $HOME/.bashrc && \
     echo "ros2_ws" >> $HOME/.bashrc && \
@@ -245,6 +245,15 @@ RUN pip install cflib opencv-python
 RUN pip install setuptools==64.0.0
 RUN pip install opencv-contrib-python==4.6.0.66
 RUN pip install --upgrade numpy==1.26.4
+
+# HERO packages
+#   Cloned, not bind-mounted, and not pinned: update them with git pull inside the container.
+#   Built by first_run.sh together with the rest of the workspace.
+ARG HERO_SIM_BRANCH=master
+ARG HEROVER_BRANCH=main
+RUN cd $HOME/ros2_ws/src \
+    && git clone --branch ${HERO_SIM_BRANCH} https://github.com/larics/hero_sim.git 
+    # && git clone --branch ${HEROVER_BRANCH} https://github.com/larics/herover.git
 
 # Final setup
 ENV USERNAME=root

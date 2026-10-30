@@ -15,7 +15,7 @@ def generate_launch_description():
     else:
         world_name = "_".join(environment_name.split("_")[:-1])
         bt_file = os.path.join(
-        get_package_share_directory('icuas26_finals'),
+        get_package_share_directory('hero_mrs'),
         'worlds', world_name, 'meshes', world_name+'.bt')
 
         launch_description.append(

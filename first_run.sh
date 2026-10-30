@@ -2,8 +2,19 @@
 set -e
 
 
-IMAGE_NAME="icuas26_finals_image"
-CONTAINER_NAME="mrs_icuas26finals"
+IMAGE_NAME="hero_mrs_image"
+CONTAINER_NAME="hero_mrs_container"
+
+# TODO: the folder of your own ROS 2 package on your laptop, e.g. "/home/ivo/my_package".
+# In the container it is ~/ros2_ws/src/<folder name>.
+MY_PACKAGE_PATH=""
+
+MY_PACKAGE_PATH="${MY_PACKAGE_PATH/#\~/$HOME}"
+if [ -z "$MY_PACKAGE_PATH" ] || [ ! -d "$MY_PACKAGE_PATH" ]; then
+    echo "Set MY_PACKAGE_PATH at the top of first_run.sh to an existing folder (now: \"$MY_PACKAGE_PATH\")."
+    exit 1
+fi
+MY_PACKAGE_NAME=$(basename "$MY_PACKAGE_PATH")
 
 
 # X11 setup
@@ -35,11 +46,6 @@ ls -FAlh "$XAUTH"
 echo ""
 
 
-# SSH agent forwarding
-echo "Linking ssh-agent..."
-ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
-
-
 # Run container
 echo "Starting container: $CONTAINER_NAME"
 echo "Using image: $IMAGE_NAME"
@@ -48,16 +54,11 @@ docker run -it \
     --env DISPLAY=$DISPLAY \
     --env QT_X11_NO_MITSHM=1 \
     --env TERM=xterm-256color \
-    --env SSH_AUTH_SOCK=/ssh-agent \
     --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
     --volume /dev:/dev \
     --volume /var/run/dbus:/var/run/dbus:z \
-    --volume ~/.ssh/ssh_auth_sock:/ssh-agent \
-    --volume "$(pwd)":/root/ros2_ws/src/icuas26_finals:rw \
-    --volume /home/khawaja/HERO/agilex_sitl:/root/ros2_ws/src/agilex_sitl:rw \
-    --volume /home/khawaja/HERO/crazyflie_utils:/root/ros2_ws/src/crazyflie_utils:rw \
-    --volume /home/khawaja/HERO/hero_mrs_control_stack:/root/ros2_ws/src/hero_mrs_control_stack:rw \
-    --volume /home/khawaja/HERO/crazyflie_hardware_utils:/root/ros2_ws/src/crazyflie_hardware_utils:rw \
+    --volume "$(pwd)":/root/ros2_ws/src/hero_mrs:rw \
+    --volume "$MY_PACKAGE_PATH":/root/ros2_ws/src/"$MY_PACKAGE_NAME":rw \
     --net host \
     --privileged \
     --gpus all \

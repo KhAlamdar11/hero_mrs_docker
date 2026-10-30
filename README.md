@@ -1,109 +1,147 @@
-# ICUAS26_finals
-This is the repo for the final stage of the ICUAS competition 2026. that will be held on Corfu in Greece.
-It is based  on the one for the [simulation stage](https://github.com/larics/icuas26_competition), so for the basic instructions on Docker installation please check that repo. This one is adapted for flying with real UAVs, therefore, before starting it, please follow the prerequisites instructions:
+# hero_mrs
 
-### Motion Capture tracking - prerequisites: 
-To obtain data from motion capture system, please install locally [NatNetSDK](https://github.com/whoenig/NatNetSDKCrossplatform) as given in README instructions.
+The Docker environment for the HERO project. Use it to run the **hero_sim** simulator and to fly the real **Crazyflies** and drive the real **herover** robots.
 
-### USB permissions - prerequisites: 
-Copy files locally: `to_copy/99-bitcraze.rules` to  `/etc/udev/rules.d` directory. Please check these links on USB permissions: [crazyradio](https://www.bitcraze.io/documentation/repository/crazyflie-lib-python/master/installation/usb_permissions/). This enables to use the USB Radio and Crazyflies over USB without being root.
+The container has ROS 2 Humble, crazyswarm2, motion capture tracking, cfclient and [hero_sim](https://github.com/larics/hero_sim).
 
-## Run Crazyflies in the Docker container
-### Setting up
-Clone the [repository]([https://github.com/larics/icuas26_finals]):
-```
-git clone git@github.com:larics/icuas26_finals.git
+New to Docker, tmux or the robots? Do the [tutorial](tutorial/README.md) after the setup below.
 
-```
-Add  to  `~/.bashrc` and source it, or type in the current terminal: 
-```
-export DOCKER_BUILDKIT=1
-```
-Run Dockerfile from the project root directory using the following commands:
+## Before the first session
+
+Do these two steps at home. They take about an hour, mostly downloading.
+
+### Step 1: Install Docker
+
+You need Ubuntu 22.04 or 24.04 and about 20 GB of free disk space.
+
+1. Install the tools you need for the next steps:
+   ```bash
+   sudo apt update && sudo apt install -y curl git
+   ```
+2. Install Docker:
+   ```bash
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sudo sh get-docker.sh
+   ```
+3. Let your user run Docker without `sudo`:
+   ```bash
+   sudo usermod -aG docker $USER
+   ```
+   Then restart your laptop.
+4. Check that Docker works. It prints `Hello from Docker!`:
+   ```bash
+   docker run hello-world
+   ```
+5. Only if your laptop has an NVIDIA GPU, which means `nvidia-smi` prints a table: install the NVIDIA Container Toolkit.
+   ```bash
+   curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+   curl -fsSL https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+   sudo apt update && sudo apt install -y nvidia-container-toolkit
+   sudo nvidia-ctk runtime configure --runtime=docker
+   sudo systemctl restart docker
+   ```
+
+### Step 2: Build the image
+
+1. Download this repository:
+   ```bash
+   cd ~
+   git clone https://github.com/KhAlamdar11/hero_mrs_docker.git
+   cd hero_mrs_docker
+   ```
+2. Build the image. This takes 30 to 60 minutes:
+   ```bash
+   docker build -t hero_mrs_image .
+   ```
+3. Check that it worked. `hero_mrs_image` should be in the list:
+   ```bash
+   docker images
+   ```
+
+## Create the container (once)
+
+1. Open `first_run.sh` and set `MY_PACKAGE_PATH` at the top to the folder of your own ROS 2 package on your laptop:
+   ```bash
+   MY_PACKAGE_PATH="/home/ivo/my_package"
+   ```
+   This is where you'll write your code. If you don't have a package yet, make an empty folder and use that.
+2. If your laptop has no NVIDIA GPU (you skipped step 1.5), delete the `--gpus all \` line in `first_run.sh`.
+3. In the `hero_mrs_docker` folder, run:
+   ```bash
+   ./first_run.sh
+   ```
+
+This creates a container called `hero_mrs_container`, builds the ROS 2 workspace (a few minutes) and opens a terminal inside it. Your package is in the container at `~/ros2_ws/src/my_package` (the name of your folder).
+
+The package folder is set when the container is created. To change it later, set `MY_PACKAGE_PATH` again and [start over](#start-over-with-a-fresh-container).
+
+## Everyday use
+
+Run these on your laptop, not inside the container:
+
+| To | Run |
+|---|---|
+| Start the container and open a terminal in it | `docker start -i hero_mrs_container` |
+| Open another terminal in the running container | `docker exec -it hero_mrs_container bash` |
+| Stop the container | `docker stop hero_mrs_container` |
+| See whether it's running | `docker ps -a` |
+
+- `exit` closes a terminal. Exiting the one opened by `docker start -i` also stops the container.
+- After a reboot the container is stopped. Start it again with `docker start -i hero_mrs_container`.
+
+### Start over with a fresh container
+
 ```bash
-# Build a Dockerfile
-docker build -t icuas26_finals_image . 
-
-# Run the crazyswarm2_img container for the first time
+docker rm hero_mrs_container
 ./first_run.sh
-
-
-# This will create docker container icuas_competition container and position you into the container
 ```
-When first time in docker ros2 workspace will automatically build, every other time you want to build the workspace run: 
-```
-cd ros2_ws
+
+This deletes everything inside the container except the `hero_mrs_docker` folder and your package.
+
+## What's saved where
+
+| Inside the container | What it is |
+|---|---|
+| `~/ros2_ws/src/my_package` | **your package folder on your laptop**. Edit your code there with any editor, then build and run it in the container |
+| `~/ros2_ws/src/hero_mrs` | **the `hero_mrs_docker` folder on your laptop** |
+| `~/ros2_ws/src/hero_sim` | the simulator |
+| everything else | lives only in the container. It survives `docker stop`, but `docker rm` deletes it |
+
+The two folders from your laptop are shared, not copied: a change on either side is a change to the same files, and they survive `docker rm`.
+
+After changing code in `~/ros2_ws/src`, build the workspace and open a new terminal:
+```bash
+cd ~/ros2_ws
 colcon build --symlink-install
 ```
-For future runs, you can use the following commands:
+
+## Updating hero_sim
+
+Inside the container:
+```bash
+cd ~/ros2_ws/src/hero_sim && git pull
+cd ~/ros2_ws
+colcon build --symlink-install --packages-select hero_sim
 ```
-# Start the crazyflies_cont:
-docker start -i icuas26_finals_container
 
-# Open the icuas26_finals_container in another terminal, while it is already started:
-docker exec -it icuas26_finals_container bash
+## Running
 
-# Stop the conatainer
-docker stop icuas26_finals_container
+| What | How | Details |
+|---|---|---|
+| Simulation | `cd ~/ros2_ws/src/hero_sim/startup && bash start.sh two_ugvs.yaml` | [hero_sim README](https://github.com/larics/hero_sim) |
+| Real Crazyflies | `cd ~/ros2_ws/src/hero_mrs/startup && ./start.sh` | [tutorial](tutorial/README.md#crazyflies) |
+| Real herover | `ros2 run herover cmd_vel_bridge`, after cloning [herover](https://github.com/larics/herover) into `~/ros2_ws/src` | [tutorial](tutorial/README.md#herover) |
 
-# Delete the container (be careful with this one as it will delete all changes inside the container)
-docker rm icuas26_finals_container
-```
-## Connecting to crazyflies
-To connect to crazyflie you must plug in the Crazyradio [flashed USB dongle](https://www.bitcraze.io/documentation/tutorials/getting-started-with-crazyradio-2-0/) into the laptop. 
+## Troubleshooting
 
-The general application [cfclient](https://www.bitcraze.io/documentation/repository/crazyflie-clients-python/master/userguides/userguide_client/) to connect to crazyflie can be started with (this shouldn't be running while crazyswarm2 and icuas26_finals packages are launched):
-
-```
-cfclient
-```
-For connecting with ROS2 crazyswarm2 package follow [instructions](https://imrclab.github.io/crazyswarm2/usage.html)
-
-## Start:
-
-To connect with crazyflies with crazyswarm2 navigate to `/root/ros2_ws/src/icuas26_finals/startup`. and run `./start.sh`. This will start node to connect the camera to the wifi, crazyflie_server_reconnect (with reconnection property), octomap_server, aruco_detection and the emergency script. Mentioned programms are obligated to run the whole time during your run! You can start your code only after all crazyflies are fully connected. Once they are fully connected, and everything works fine, the topic `/mission_start` will publish `True` message.
-
-
-### Battery Monitoring
-Information about the battery is available on topic `/cf_x/status`, where `cf_x` is the namespace of a specific Crazyflie. Message type is [`Status`](https://github.com/IMRCLab/crazyswarm2/blob/main/crazyflie_interfaces/msg/Status.msg) defined in `crazyflie_interfaces` of `Crazyswarm2` repo. The field `battery_voltage` indicates battery level in Volts. You follow its status on your own. Battery is considered fully charged if its voltage level is above 4V and empty around 3.1V. Keep in mind that during the takeoff and height increase Voltage will drop, but the true status is shown during hovering or changing horizontal position. 
-
-## Competition procedure
-For each benchmark world, you will receive the following files:
-
-- `setup.sh`
-- `AGV_path_icuas26_k.yaml`
-- A folder named `icuas26_k` containing the `.bt` and `.stl` models of the corresponding world
-
-Here, k denotes the world identifier (e.g., final, final2, test, test2, 1, 2, etc.). These files will be provided for testing and final evaluation runs via your team's OneDrive folder. The team leader will receive the corresponding access link.
-
-To deploy a new world:
-
-1. Replace the existing setup.sh file in:
-   `~/ros2_ws/src/icuas26_finals/startup/`
-
-2. Copy the icuas26_k folder to:
-   `~/ros2_ws/src/icuas26_finals/worlds/`
-
-3. Copy AGV_path_icuas26_k.yaml to:
-   `~/ros2_ws/src/icuas26_finals/config/`
-4. Rebuild the workspace:
-    `cd ~/ros2_ws`
-    `colcon build --symlink-install`
-
-After rebuilding, launch the system using the provided startup scripts.
-
-
-## INFO part
-If you are working in the group and you are all using the same network, please check [ROS_DOMAIN_ID](https://docs.ros.org/en/eloquent/Tutorials/Configuring-ROS2-Environment.html#the-ros-domain-id-variable) in .bashrc in container. Random number should be set during the build, however it is not impossible that some of you got the same number. If that is the situatation please change it, so that your code do  not crash.
-
-General information about Crazyflies can be found [here](https://www.bitcraze.io/products/crazyflie-2-1/).
-
-Tutorials on Crazyflies are [here](https://www.bitcraze.io/documentation/start/).
-
-General information about Cfclient can be found [here](https://www.bitcraze.io/documentation/repository/crazyflie-clients-python/master/userguides/userguide_client/).
-
-More info about Crazyswarm2 is described in [here](https://imrclab.github.io/crazyswarm2/).
-
-The provided Docker image comes with a few preinstalled tools and configs which may simplify your life.
-**Tmuxinator** is a tool that allows you to start a tmux session with a complex layout and automatically run commands by configuring a simple yaml configuration file. Tmux is a terminal multiplexer - it can run multiple terminal windows inside a single window. This approach is simpler than having to do `docker exec` every time you need a new terminal. You can move between terminal panes by holding down `Ctrl` key and navigating with arrow keys. Switching between tabs is done with `Shift` and arrow keys. If you have a lot of open panes and tabs in your tmux, you can simply kill everything and exit by pressing `Ctrl+b` and then `k`.
-Here are some links: [Tmuxinator](https://github.com/tmuxinator/tmuxinator), [Getting starded with Tmux](https://linuxize.com/post/getting-started-with-tmux/), [Tmux Cheat Sheet](https://tmuxcheatsheet.com/)
+| Problem | What to do |
+|---|---|
+| `permission denied` when running `docker` | Do [step 1.3](#step-1-install-docker) and restart your laptop |
+| The build stops with a network error | Run the same `docker build` again. It continues where it stopped |
+| `could not select device driver "" with capabilities: [[gpu]]` | No NVIDIA GPU or toolkit: do step 2 of [Create the container](#create-the-container-once) |
+| `Conflict. The container name "/hero_mrs_container" is already in use` | The container already exists: `docker start -i hero_mrs_container` |
+| `No such container: hero_mrs_container` | Create it with `./first_run.sh` |
+| `Set MY_PACKAGE_PATH at the top of first_run.sh ...` | Do step 1 of [Create the container](#create-the-container-once). The folder must exist |
+| On your laptop, you can't save a file in your package (`permission denied`) | Files made inside the container belong to root. On your laptop: `sudo chown -R $USER <your package folder>` |
+| RViz doesn't open (`could not connect to display`) | On your laptop, run `xhost +local:` and try again |
+| `Package '...' not found` | Build the workspace (see [What's saved where](#whats-saved-where)) and open a new terminal |

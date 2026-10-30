@@ -7,10 +7,10 @@ windows:
   - crazyflies_start:
       layout: tiled
       panes:
-        # - ros2 launch icuas26_finals aideck_streamer_udp.launch.py
-        - ros2 launch icuas26_finals system_launch.py
-        # - sleep 10;ros2 launch icuas26_finals aruco_recognition.launch.py
-        # - sleep 5;ros2 launch icuas26_finals octomap_server.launch.py
-        # - ros2 run mqtt_client mqtt_client --ros-args --params-file /root/ros2_ws/src/icuas26_finals/config/mqtt_icuas26_finals.yaml
-        # - python /root/ros2_ws/src/icuas26_finals/scripts/joy_emergency.py
+        # - ros2 launch hero_mrs aideck_streamer_udp.launch.py
+        - ros2 launch hero_mrs system_launch.py
+        # - sleep 10;ros2 launch hero_mrs aruco_recognition.launch.py
+        # - sleep 5;ros2 launch hero_mrs octomap_server.launch.py
+        # - ros2 run mqtt_client mqtt_client --ros-args --params-file /root/ros2_ws/src/hero_mrs/config/mqtt_hero_mrs.yaml
+        # - python /root/ros2_ws/src/hero_mrs/scripts/joy_emergency.py
         # - history -s "ros2 bag record -s mcap --all"

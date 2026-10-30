@@ -13,7 +13,7 @@ def generate_launch_description():
     cfs_yaml="crazyflies_real.yaml"
         
     crazyflies_yaml = os.path.join(
-        get_package_share_directory('icuas26_finals'),
+        get_package_share_directory('hero_mrs'),
         'config',
         cfs_yaml)
 
@@ -47,13 +47,13 @@ def generate_launch_description():
     
     charging_file = os.environ.get('CHARGING_FILE', '')
     charge_yaml = os.path.join(
-        get_package_share_directory('icuas26_finals'),
+        get_package_share_directory('hero_mrs'),
         'config',
         charging_file)
     
     # construct motion_capture_configuration
     motion_capture_yaml = os.path.join(
-                                get_package_share_directory('icuas26_finals'),
+                                get_package_share_directory('hero_mrs'),
                                 'config',
                                 'motion_capture.yaml')
     with open(motion_capture_yaml, 'r') as ymlfile:
@@ -79,7 +79,7 @@ def generate_launch_description():
     cfs_server_node = 'crazyflie_server_reconnect_new.py'   
     launch_description.append(
         Node(
-            package='icuas26_finals',
+            package='hero_mrs',
             executable=cfs_server_node,
             name='crazyflie_server',
             output='screen',
@@ -125,7 +125,7 @@ def generate_launch_description():
     AGV_path = os.environ.get('AGV_PATH', '')
     
     AGV_yaml_path = os.path.join(
-        get_package_share_directory('icuas26_finals'),
+        get_package_share_directory('hero_mrs'),
         'config',
         AGV_path)
     
@@ -133,7 +133,7 @@ def generate_launch_description():
     
     # launch_description.append(
     #     Node(
-    #        package='icuas26_finals',
+    #        package='hero_mrs',
     #        executable='AGV.py',
     #        name='AGV',
     #        namespace='AGV',
@@ -151,7 +151,7 @@ def generate_launch_description():
             namespace='',
             executable='rviz2',
             name='rviz2',
-            arguments=['-d' + os.path.join(get_package_share_directory('icuas26_finals'), 'config', 'config.rviz')]
+            arguments=['-d' + os.path.join(get_package_share_directory('hero_mrs'), 'config', 'config.rviz')]
         )
         
     )
