@@ -25,12 +25,12 @@ Common commands. Run them on your laptop, not in the container:
 - `docker rm hero_mrs_container` - deletes the container.
 
 **NOTA BENE**
-- Two folders in the container are folders on your laptop: your package (`~/ros2_ws/src/my_package`, the one you set in `first_run.sh`) and `~/ros2_ws/src/hero_mrs` (the `hero_mrs_docker` folder). Files there are safe even if you delete the container.
+- Two folders in the container are folders on your laptop: your package (`~/ros2_ws/src/undergrad_project_mrs`, the one you set in `first_run.sh`) and `~/ros2_ws/src/hero_mrs` (the `hero_mrs_docker` folder). Files there are safe even if you delete the container.
 - Everything else in the container is deleted with `docker rm`.
 
 ### Hands-on #1
 
-1. Do steps 1 to 3 of [Before the first session](../README.md#before-the-first-session) in the main README. Then start the container with `docker start -i hero_mrs_container`.
+1. Do the three steps of the [installation](installation.md). Then start the container with `docker start -i hero_mrs_container`.
 2. Look at the ROS 2 workspace:
     ```bash
     ls ~/ros2_ws/src
@@ -150,6 +150,8 @@ The main commands:
     nano my_test.yaml
     ```
     Move a robot, add a Crazyflie or a pillar, then start it with `bash start.sh my_test.yaml` from the `startup` folder.
+
+    This file is only in the container, and `docker rm` deletes it. To keep a scenario, put it in your package: see [Your own scenario](../README.md#your-own-scenario-obstacles-and-robots).
 
 ---
 ## Real robots
