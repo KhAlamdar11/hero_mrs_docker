@@ -7,7 +7,7 @@ CONTAINER_NAME="hero_mrs_container"
 
 # TODO: the folder of your own ROS 2 package on your laptop, e.g. "/home/ivo/my_package".
 # In the container it is ~/ros2_ws/src/<folder name>.
-MY_PACKAGE_PATH=""
+MY_PACKAGE_PATH="~/undergrad_project_mrs"
 
 MY_PACKAGE_PATH="${MY_PACKAGE_PATH/#\~/$HOME}"
 if [ -z "$MY_PACKAGE_PATH" ] || [ ! -d "$MY_PACKAGE_PATH" ]; then
